@@ -1,6 +1,18 @@
+// import FakeTimers from "@sinonjs/fake-timers";
 import { InMemoryLRUCache } from "..";
-
+// @ts-ignore
+import Clock from 'clock-mock';
 describe("InMemoryLRUCache", () => {
+  let clock: any;
+  beforeAll(() => {
+    clock = new Clock();
+    clock.enter();
+  });
+  
+  afterAll(() => {
+    clock.exit();
+  });
+
   const cache = new InMemoryLRUCache();
 
   it("can set and get", async () => {
@@ -19,16 +31,18 @@ describe("InMemoryLRUCache", () => {
   });
 
   it("can expire keys based on ttl", async () => {
-    await cache.set("short", "s", { ttl: 0.01 });
-    await cache.set("long", "l", { ttl: 0.05 });
+    await cache.set("short", "s", { ttl: 1 });
+    await cache.set("long", "l", { ttl: 5 });
     expect(await cache.get("short")).toEqual("s");
     expect(await cache.get("long")).toEqual("l");
 
-    await sleep(15);
+    // clock.tick(1500)
+    clock.advance(1500);
     expect(await cache.get("short")).toEqual(undefined);
     expect(await cache.get("long")).toEqual("l");
 
-    await sleep(40);
+    // clock.tick(4000);
+    clock.advance(4000);
     expect(await cache.get("short")).toEqual(undefined);
     expect(await cache.get("long")).toEqual(undefined);
   });
@@ -37,11 +51,12 @@ describe("InMemoryLRUCache", () => {
     await cache.set("forever", "yours", { ttl: null });
     expect(await cache.get("forever")).toEqual("yours");
 
-    await sleep(1000);
+    // clock.tick(1000);
+    clock.advance(1000);
     expect(await cache.get("forever")).toEqual("yours");
   });
 });
 
-async function sleep(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
+// async function sleep(ms: number) {
+//   return new Promise((resolve) => setTimeout(resolve, ms));
+// }
